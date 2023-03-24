@@ -1,0 +1,45 @@
+from pyecharts import options as opts
+from pyecharts.charts import Map, Timeline
+import os
+import pandas as pd
+from snapshot_phantomjs import snapshot
+from pyecharts.render import make_snapshot
+
+import webbrowser as wb
+
+df = pd.read_excel('年度常州县级碳排放.xlsx')
+quxian = df.columns[1:]
+# print(quxian)
+flow = []
+sj = list(df['时间'])
+for i in range(len(sj)):
+    flow.append([])
+    for j in range(len(quxian)):
+        flow[i].append(int(list(df[quxian[j]])[i]))
+# print(flow)
+timeline = Timeline(init_opts=opts.InitOpts(width='720px', height='350px'))
+
+for m in range(len(sj)):
+    map = (Map().add("常州", [list(z) for z in zip(quxian, flow[m])], "常州").set_global_opts(
+        title_opts=opts.TitleOpts(title="常州行政区划地图"), visualmap_opts=opts.VisualMapOpts(
+            max_=2000,
+            range_text=['万吨碳排放', ''],  # 上下的名称
+            split_number=5,  # 如果是连续数据, 分成几段
+            pos_left='20%',  # pos_right
+            pos_top='30%',  # pos_bottom
+            is_piecewise=True,  # 是否为分段显示
+            pieces=[{"min": 1, "max": 400, "color": "#32e0c4", 'label': 'T1'},
+                    {"min": 400.1, "max": 800, "color": "#b8de6f", 'label': 'T2'},
+                    {"min": 800.1, "max": 1200, "color": "#FFFF00", 'label': 'T3'},
+                    {"min": 1200.1, "max": 1600, "color": "#fd8c04", 'label': 'T4'},
+                    {"min": 1600.1, "max": 2000, "color": "#ec5858", 'label': 'T5'}]
+        )))
+    timeline.add(chart=map, time_point=sj[m])
+
+timeline.add_schema(is_auto_play=True, play_interval=600)
+
+timeline.render()
+
+os.system("render.html")
+
+make_snapshot(snapshot,timeline.render(),"render.svg") #生成svg图片
